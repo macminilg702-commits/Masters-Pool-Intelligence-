@@ -1,0 +1,17 @@
+# Never commit these
+.env
+*.json
+data/
+__pycache__/
+*.pyc
+.DS_Store
+backtest_results/
+
+# Secrets — managed via Streamlit Cloud UI, not committed
+.streamlit/secrets.toml
+
+# PDFs and large reference files
+*.pdf
+
+# Claude internal files
+.claude/
