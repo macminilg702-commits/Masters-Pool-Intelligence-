@@ -766,6 +766,149 @@ button[data-testid="baseButton-secondary"]:hover {
 /* Tab content minimum */
 [data-testid="stTabContent"] p  { font-size: 11px !important; }
 [data-testid="stTabContent"] li { font-size: 11px !important; }
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE — screens up to 768px
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Core layout: stack ALL multi-column blocks vertically ── */
+  [data-testid="stHorizontalBlock"] {
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+
+  /* Every st.column takes full width on mobile */
+  [data-testid="stColumn"] {
+    width: 100% !important;
+    min-width: 100% !important;
+    flex: 0 0 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Prevent horizontal scroll everywhere */
+  .main .block-container,
+  [data-testid="stMainBlockContainer"],
+  [data-testid="stTabContent"] {
+    padding: 8px !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  /* ── Tab buttons — larger touch targets ── */
+  [data-testid="stTabs"] button[role="tab"] {
+    font-size: 10px !important;
+    padding: 8px 8px !important;
+    letter-spacing: 0.03em !important;
+  }
+
+  /* ── Top bar — compress ── */
+  .topbar {
+    padding: 0 12px !important;
+    height: 44px !important;
+  }
+  .wordmark { font-size: 18px !important; }
+  .wordmark-sub { display: none !important; }
+  .status-bar { gap: 8px !important; }
+  .status-item { font-size: 8px !important; }
+  .countdown { font-size: 10px !important; }
+
+  /* ── MY PICKS — player cards ── */
+  .tc {
+    margin-bottom: 8px !important;
+    padding: 12px !important;
+  }
+  .ps-name { font-size: 15px !important; }
+  .ps-name.lg { font-size: 16px !important; }
+
+  /* Score math line: allow wrapping */
+  [style*="DM Mono"][style*="font-size:10px"],
+  [style*="DM Mono"][style*="font-size: 10px"] {
+    word-break: break-all !important;
+    white-space: normal !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Tiebreaker */
+  .tb-num { font-size: 36px !important; }
+  .tb-card { padding: 14px !important; }
+
+  /* Confirm button */
+  .confirm-btn .stButton button {
+    font-size: 13px !important;
+    min-height: 48px !important;
+  }
+
+  /* ── LIVE tab — leaderboard table ── */
+  .lb-hdr, .lb-row {
+    grid-template-columns: 36px 1fr 52px 44px 44px !important;
+    font-size: 11px !important;
+  }
+  .lb-nm  { font-size: 12px !important; }
+  .lb-pos { font-size: 11px !important; }
+  .sc-u, .sc-o, .sc-e { font-size: 11px !important; }
+
+  /* Team standing rank cards */
+  .tc-grid { gap: 6px !important; }
+
+  /* Rankings table header + rows */
+  .rk-hdr, details.rk-row > summary {
+    grid-template-columns: 28px 1fr 52px 64px 36px 36px 36px 46px !important;
+    font-size: 10px !important;
+  }
+
+  /* Hide the rightmost (FLAGS) column in rankings on mobile */
+  .rk-hdr-cell:last-child,
+  details.rk-row > summary > div:last-child {
+    display: none !important;
+  }
+
+  /* Rankings player name */
+  .rk-nm { font-size: 12px !important; }
+  .rk-meta { font-size: 9px !important; }
+
+  /* ── MODEL tab — compress sub-detail ── */
+  details.rk-row > summary { font-size: 10px !important; }
+
+  /* ── DATA tab — cap tall charts so they don't require endless scroll ── */
+  .js-plotly-plot { max-height: 500px !important; }
+
+  /* ── General: any inline grid of 3+ items wraps on mobile ── */
+  [style*="grid-template-columns:repeat(3"] {
+    grid-template-columns: 1fr !important;
+  }
+  [style*="grid-template-columns: repeat(3"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Portfolio health 3-grid → single column */
+  [style*="grid-template-columns:repeat(3,1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Conditions / score bars: prevent truncation */
+  [style*="flex:1"][style*="min-width:0"] {
+    min-width: 40px !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SMALL MOBILE — screens up to 480px
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  [data-testid="stTabs"] button[role="tab"] {
+    font-size: 9px !important;
+    padding: 6px 6px !important;
+  }
+  .ps-name { font-size: 13px !important; }
+  .rk-nm   { font-size: 11px !important; }
+  .lb-nm   { font-size: 11px !important; }
+
+  /* 2-across on very small screens for team rank cards */
+  [style*="display:flex;gap:12px;margin-bottom:14px"] > div {
+    flex: 0 0 calc(50% - 6px) !important;
+  }
+}
 </style>
 """
 
@@ -2993,7 +3136,7 @@ def tab_model(df: pd.DataFrame, data: dict):
             font=dict(family="DM Sans", size=9, color="#426842"),
             align="center",
         )
-        st.plotly_chart(fig_donut, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig_donut, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
     with arch_r:
         # Sub-weight data — inputs, weights, and evidence notes for each component
@@ -3360,7 +3503,7 @@ def tab_model(df: pd.DataFrame, data: dict):
             showlegend=False,
             bargap=0.25,
         )
-        st.plotly_chart(fig_bt, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig_bt, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
         # Year-by-year table
         st.markdown(
@@ -3462,7 +3605,7 @@ def tab_model(df: pd.DataFrame, data: dict):
             showlegend=False,
             bargap=0.3,
         )
-        st.plotly_chart(fig_cond, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig_cond, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
         # Normal vs chaos comparison
         st.markdown(
@@ -4031,7 +4174,7 @@ def _render_scoring_architecture_v2(df: pd.DataFrame, data: dict) -> None:
         ),
         hovermode="closest",
     )
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
     # --- insight callout: top value vs top chalk ---
     try:
@@ -4154,7 +4297,7 @@ def _render_model_validation(df: pd.DataFrame, data: dict):
             ),
             showlegend=False, bargap=0.25,
         )
-        st.plotly_chart(fig_bt, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig_bt, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
         st.markdown(
             '<div style="font-size:8px;letter-spacing:.10em;text-transform:uppercase;'
@@ -4237,7 +4380,7 @@ def _render_model_validation(df: pd.DataFrame, data: dict):
             yaxis=dict(tickfont=dict(size=10, color="#7aaa7a")),
             showlegend=False, bargap=0.3,
         )
-        st.plotly_chart(fig_cond, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig_cond, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
         st.markdown(
             f'<div style="display:flex;gap:10px;margin-bottom:16px;">'
@@ -4514,9 +4657,9 @@ def render_data_tab(df: pd.DataFrame, ct: dict, data: dict) -> None:
             annotation_text="50th pct", annotation_font_color="#4A6A4A",
             annotation_font_size=9,
         )
-        _apply_chart_theme(fig1a, "Augusta Score — Top 40 Players", height=900)
+        _apply_chart_theme(fig1a, "Augusta Score — Top 40 Players", height=600)
         fig1a.update_layout(showlegend=False, xaxis_title="Augusta Score", yaxis_title="")
-        st.plotly_chart(fig1a, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig1a, use_container_width=True, config={"displayModeBar": False, "responsive": True})
     except Exception as e:
         st.warning(f"Field distribution chart not available: {e}")
 
@@ -4594,7 +4737,7 @@ def render_data_tab(df: pd.DataFrame, ct: dict, data: dict) -> None:
             yaxis_title="Augusta Score",
             showlegend=False,
         )
-        st.plotly_chart(fig1b, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig1b, use_container_width=True, config={"displayModeBar": False, "responsive": True})
     except Exception as e:
         st.warning(f"Ownership scatter not available: {e}")
 
@@ -4663,7 +4806,7 @@ def render_data_tab(df: pd.DataFrame, ct: dict, data: dict) -> None:
                     margin=dict(l=20, r=20, t=50, b=20),
                     height=380,
                 )
-                st.plotly_chart(fig_r, use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(fig_r, use_container_width=True, config={"displayModeBar": False, "responsive": True})
     except Exception as e:
         st.warning(f"Radar charts not available: {e}")
 
@@ -4702,7 +4845,7 @@ def render_data_tab(df: pd.DataFrame, ct: dict, data: dict) -> None:
         fig2b.update_layout(barmode="stack")
         _apply_chart_theme(fig2b, "Component Breakdown — Top 20 Players", height=600)
         fig2b.update_layout(xaxis_title="Score (sum of weighted components)", yaxis_title="")
-        st.plotly_chart(fig2b, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig2b, use_container_width=True, config={"displayModeBar": False, "responsive": True})
     except Exception as e:
         st.warning(f"Component breakdown chart not available: {e}")
 
@@ -4783,7 +4926,7 @@ def render_data_tab(df: pd.DataFrame, ct: dict, data: dict) -> None:
                     showarrow=False, align="center",
                 )],
             )
-            st.plotly_chart(fig3a, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig3a, use_container_width=True, config={"displayModeBar": False, "responsive": True})
         except Exception as e:
             st.warning(f"Ownership band chart not available: {e}")
 
@@ -4853,7 +4996,7 @@ def render_data_tab(df: pd.DataFrame, ct: dict, data: dict) -> None:
                 yaxis_title="EV Score (Augusta Score / √Ownership)",
                 showlegend=False,
             )
-            st.plotly_chart(fig3b, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig3b, use_container_width=True, config={"displayModeBar": False, "responsive": True})
         except Exception as e:
             st.warning(f"EV vs odds chart not available: {e}")
 
@@ -4902,7 +5045,7 @@ def render_data_tab(df: pd.DataFrame, ct: dict, data: dict) -> None:
             yaxis_title="Number of Entries",
             legend=dict(bgcolor="#0D160D", bordercolor="#1E301E", borderwidth=1),
         )
-        st.plotly_chart(fig3c, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig3c, use_container_width=True, config={"displayModeBar": False, "responsive": True})
     except Exception as e:
         st.warning(f"Tiebreaker histogram not available: {e}")
 
@@ -4979,7 +5122,7 @@ def render_data_tab(df: pd.DataFrame, ct: dict, data: dict) -> None:
                 height=380,
             )
             fig4a.update_layout(yaxis=dict(range=[0, 105], gridcolor="#1E301E"))
-            st.plotly_chart(fig4a, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig4a, use_container_width=True, config={"displayModeBar": False, "responsive": True})
         except Exception as e:
             st.warning(f"Player comparison chart not available: {e}")
 
@@ -5030,7 +5173,7 @@ def render_data_tab(df: pd.DataFrame, ct: dict, data: dict) -> None:
                 yaxis=dict(gridcolor="#1E301E"),
                 showlegend=False,
             )
-            st.plotly_chart(fig4b, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig4b, use_container_width=True, config={"displayModeBar": False, "responsive": True})
         except Exception as e:
             st.warning(f"Percentile chart not available: {e}")
 
@@ -5101,7 +5244,7 @@ def render_data_tab(df: pd.DataFrame, ct: dict, data: dict) -> None:
                     yaxis=dict(tickfont=dict(size=9), autorange="reversed"),
                     margin=dict(l=80, r=20, t=50, b=80),
                 )
-                st.plotly_chart(fig4c, use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(fig4c, use_container_width=True, config={"displayModeBar": False, "responsive": True})
             else:
                 st.info("Need at least 2 players with data for correlation chart.")
         else:
@@ -5115,6 +5258,12 @@ def render_data_tab(df: pd.DataFrame, ct: dict, data: dict) -> None:
 # ─────────────────────────────────────────────────────────────────
 
 def main():
+    # ── Viewport meta tag (mobile scaling) ────────────────────────
+    st.markdown(
+        '<meta name="viewport" content="width=device-width,'
+        ' initial-scale=1.0, maximum-scale=5.0">',
+        unsafe_allow_html=True,
+    )
     # ── CSS injection ──────────────────────────────────────────────
     st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
