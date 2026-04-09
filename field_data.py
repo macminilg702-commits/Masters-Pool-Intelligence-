@@ -32,33 +32,37 @@ ODDS_NAME_OVERRIDES = {
 # Syncs fallback odds_american to match current market
 # ─────────────────────────────────────────────────────────────────
 UPDATED_ODDS_EXISTING = {
-    "Scottie Scheffler":  400,
-    "Rory McIlroy":       900,
-    "Bryson DeChambeau":  1200,
-    "Jon Rahm":           1200,
-    "Ludvig Aberg":       1400,
-    "Xander Schauffele":  1600,
-    "Tommy Fleetwood":    1800,
-    "Matt Fitzpatrick":   2000,
-    "Collin Morikawa":    2000,
-    "Cameron Young":      2000,
-    "Patrick Reed":       2500,
-    "Hideki Matsuyama":   2800,
-    "Viktor Hovland":     3300,
-    "Brooks Koepka":      3300,
-    "Patrick Cantlay":    4000,
-    "Shane Lowry":        4000,
-    "Robert MacIntyre":   4000,
-    "Min Woo Lee":        4000,
-    "Jordan Spieth":      4000,
-    "Justin Thomas":      4000,
+    # April 8, 2026 — FanDuel final pre-tournament odds
+    "Scottie Scheffler":   550,
+    "Bryson DeChambeau":  1000,
+    "Jon Rahm":           1000,
+    "Rory McIlroy":       1300,
+    "Xander Schauffele":  1500,   # SHORTENED from +1600
+    "Ludvig Aberg":       1700,
+    "Matt Fitzpatrick":   2200,
+    "Cameron Young":      2200,
+    "Tommy Fleetwood":    2200,
+    "Hideki Matsuyama":   2700,
+    "Robert MacIntyre":   2700,
+    "Min Woo Lee":        3000,
+    "Collin Morikawa":    3500,
+    "Patrick Reed":       3500,
+    "Jordan Spieth":      4500,
+    "Brooks Koepka":      4500,
+    "Si Woo Kim":         4500,
+    "Viktor Hovland":     5500,
+    "Russell Henley":     5500,
+    "Patrick Cantlay":    7000,
+    "Justin Thomas":      7000,
+    "Shane Lowry":        7000,
+    "Tyrrell Hatton":     8000,
+    "Corey Conners":      8000,
+    "Cameron Smith":      8000,
     "Sepp Straka":        5000,
     "Joaquin Niemann":    6000,
-    "Sam Burns":          6600,  # added to existing via field_data
-    "Corey Conners":      6600,
+    "Sam Burns":          6600,
     "Jason Day":          6600,
-    "Adam Scott":         6600,
-    "Cameron Smith":      6600,
+    "Adam Scott":         7000,
     "Keegan Bradley":     10000,
     "Tony Finau":         10000,
     "Will Zalatoris":     10000,
@@ -133,35 +137,36 @@ CUT_RATE_FLOOR: float = 0.60
 # Players this pool consistently overowns relative to their actual
 # Augusta probability (fame / narrative bias inflates ownership).
 POOL_OVEROWNED_PLAYERS: dict[str, float] = {
-    # Based on 2026 pool behavior projections + historical Ferraro data
-    "Scottie Scheffler":  1.6,  # WR1, 2× champ, pool default → ~58-62% owned
-    "Rory McIlroy":       1.8,  # Defending champ, narrative → ~55-60% owned
-    "Jordan Spieth":      1.9,  # Perennial pool pick regardless of form
+    # Updated April 8, 2026 — pool behavior projections + historical Ferraro data
+    "Scottie Scheffler":  1.8,  # WR1, 2× champ, pool default → ~58-65% owned
+    "Rory McIlroy":       1.9,  # Defending champ, narrative peak → ~55-62% owned
+    "Jordan Spieth":      2.0,  # Perennial pool pick regardless of form → heavily overowned
     "Jon Rahm":           1.4,  # 2023 winner, familiar name → ~32-36% owned
     "Justin Thomas":      1.7,  # Name recognition, pool always picks him
-    "Jason Day":          1.5,  # Veteran name, pool overweights
-    "Tony Finau":         1.4,  # Popular pool pick historically
-    "Xander Schauffele":  1.4,  # Only player top-10 last 3 events → pool catches on
-    "Matt Fitzpatrick":   3.5,  # Won Valspar, strong Augusta record → pool overweights; push above 8% mid-tier band (needs ~3.3× to clear 8%)
-    "Patrick Reed":       1.3,  # 2018 champ; Augusta Champ name recognition inflates pool ownership despite poor LIV form
+    "Jason Day":          1.6,  # Veteran name, pool overweights
+    "Dustin Johnson":     1.3,  # LIV player but household name → pool inflates
+    "Patrick Reed":       1.4,  # 2018 champ; name recognition inflates despite poor LIV form
 }
 
 # Players this pool systematically underowns relative to their
 # Augusta probability — the exploitable edge plays.
 POOL_UNDEROWNED_PLAYERS: dict[str, float] = {
-    # Players pool systematically underweights — the exploitable edge plays
-    "Bryson DeChambeau": 0.45,  # +1200, 2 consec wins BUT LIV → ~6-8% owned
-    "Tommy Fleetwood":   0.50,  # FedEx Cup champ, T8 Players, T10 Valero → ~5-7% owned
-    "Cameron Young":     0.55,  # Won Players, pool underestimates → ~8-12% owned
-    "Ludvig Aberg":      0.45,  # Was 0% in 2023 pool; T2 Augusta 2024 → ~5-8% owned
-    "Collin Morikawa":   0.70,  # Injury concern reduces pool ownership → ~10-14% owned
-    "Cameron Smith":     0.70,  # LIV player, pool underweights → ~6-8% owned
-    "Viktor Hovland":    0.60,  # Inconsistent 2026, pool reflects this → ~5-8% owned
-    "Wyndham Clark":     0.50,  # Undervalued Augusta play
-    "Sahith Theegala":   0.40,
-    "Corey Conners":     0.50,
-    "Shane Lowry":       0.60,
-    "Hideki Matsuyama":  0.70,
+    # Updated April 8, 2026 — the exploitable edge plays
+    "Bryson DeChambeau":  0.40,  # +1000, 2 consec LIV wins BUT LIV stigma → ~6-8% owned
+    "Tommy Fleetwood":    0.45,  # Euro form, not household name in US pools → ~5-7% owned
+    "Ludvig Aberg":       0.40,  # Was 0% in 2023 pool; T2 Augusta 2024 → ~5-8% owned
+    "Xander Schauffele":  0.60,  # Shortened to +1500; pool underweights vs top tier → ~12-16% owned
+    "Cameron Young":      0.55,  # Won Players, pool underestimates → ~8-12% owned
+    "Matt Fitzpatrick":   0.55,  # Strong Augusta record but lower name recognition → ~8-12% owned
+    "Robert MacIntyre":   0.50,  # Euro player, largely unknown in US pools → ~4-6% owned
+    "Collin Morikawa":    0.70,  # Injury concern reduces pool ownership → ~10-14% owned
+    "Cameron Smith":      0.70,  # LIV player, pool underweights → ~6-8% owned
+    "Viktor Hovland":     0.60,  # Inconsistent 2026, pool reflects this → ~5-8% owned
+    "Wyndham Clark":      0.50,  # Undervalued Augusta play
+    "Sahith Theegala":    0.40,
+    "Corey Conners":      0.50,
+    "Shane Lowry":        0.60,
+    "Hideki Matsuyama":   0.70,
 }
 
 # ─────────────────────────────────────────────────────────────────

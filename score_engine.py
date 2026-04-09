@@ -27,35 +27,39 @@ from field_data import AUGUSTA_CUT_RATES, CUT_RATE_FLOOR, MASTERS_WITHDRAWALS_20
 # Takes precedence over odds.json when computing Vegas component.
 # Update weekly as markets move closer to tournament.
 CURRENT_ODDS_OVERRIDE: dict[str, int] = {
-    "Scottie Scheffler":    500,
-    "Jon Rahm":             950,
-    "Bryson DeChambeau":   1000,
-    "Rory McIlroy":        1200,
-    "Ludvig Aberg":        1500,
-    "Xander Schauffele":   1600,
-    "Matt Fitzpatrick":    2000,
-    "Cameron Young":       2000,
-    "Tommy Fleetwood":     2200,
-    "Collin Morikawa":     3000,
-    "Justin Rose":         3000,
-    "Robert MacIntyre":    3300,
-    "Patrick Reed":        3500,
-    "Hideki Matsuyama":    4000,
-    "Min Woo Lee":         4000,
-    "Brooks Koepka":       4500,
-    "Jordan Spieth":       4500,
-    "Chris Gotterup":      4500,
-    "Shane Lowry":         5500,
-    "Viktor Hovland":      5500,
-    "Russell Henley":      5500,
-    "Akshay Bhatia":       6000,
-    "Patrick Cantlay":     6500,
-    "Jacob Bridgeman":     6500,
-    "Nicolai Hojgaard":    6500,
-    "Jake Knapp":          7000,
-    "Adam Scott":          7000,
-    "Tyrrell Hatton":      7000,
-    "Cameron Smith":       8000,
+    # ── April 8, 2026 — FanDuel final pre-tournament odds ──────────
+    "Scottie Scheffler":    550,   # was 500 — slight drift longer
+    "Bryson DeChambeau":   1000,   # unchanged
+    "Jon Rahm":            1000,   # was 950
+    "Rory McIlroy":        1300,   # was 1200 — market cooling slightly
+    "Xander Schauffele":   1500,   # was 1600 — SHORTENED, in form
+    "Ludvig Aberg":        1700,   # was 1500 — slightly longer
+    "Matt Fitzpatrick":    2200,   # was 2000
+    "Cameron Young":       2200,   # was 2000
+    "Tommy Fleetwood":     2200,   # unchanged
+    "Hideki Matsuyama":    2700,   # was 4000 — shortened significantly
+    "Robert MacIntyre":    2700,   # was 3300 — shortened
+    "Justin Rose":         3000,   # unchanged
+    "Min Woo Lee":         3000,   # was 4000 — shortened
+    "Collin Morikawa":     3500,   # was 3000 — injury priced in
+    "Patrick Reed":        3500,   # unchanged
+    "Jordan Spieth":       4500,   # was 4500 ✓
+    "Brooks Koepka":       4500,   # was 4500 ✓
+    "Si Woo Kim":          4500,   # new entry
+    "Viktor Hovland":      5500,   # unchanged
+    "Russell Henley":      5500,   # unchanged
+    "Chris Gotterup":      4500,   # unchanged
+    "Akshay Bhatia":       6000,   # unchanged
+    "Patrick Cantlay":     7000,   # was 6500
+    "Justin Thomas":       7000,   # new entry
+    "Shane Lowry":         7000,   # was 5500
+    "Jacob Bridgeman":     6500,   # unchanged
+    "Nicolai Hojgaard":    6500,   # unchanged
+    "Jake Knapp":          7000,   # unchanged
+    "Adam Scott":          7000,   # unchanged
+    "Tyrrell Hatton":      8000,   # was 7000
+    "Corey Conners":       8000,   # new entry
+    "Cameron Smith":       8000,   # unchanged
 }
 
 # ── Putting concern adjustments (applied to fit_raw before normalization) ──

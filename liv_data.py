@@ -82,6 +82,16 @@ LIV_PLAYER_BASELINE: dict[str, dict] = {
         "driving_distance_avg": 297.2,
         "notes": "Solid young LIV player.",
     },
+    "Patrick Reed": {
+        "recent_results": [30, 35, 28, 42, 38],
+        # Poor 2026 LIV season — no top-20s
+        "driving_distance_rank": 28,
+        "driving_distance_avg": 291.0,
+        "notes": (
+            "2018 Masters champion (DNA strong) but poor 2026 form. "
+            "WR#38. Not a 2026 contender."
+        ),
+    },
     "Phil Mickelson": {
         "recent_results": [99, 99, 99, 99, 99],
         "driving_distance_rank": 50,
