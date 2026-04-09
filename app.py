@@ -2507,12 +2507,9 @@ def tab_rankings(df: pd.DataFrame, data: dict):
     # ── Table rows ─────────────────────────────────────────────────
     rows_html = "".join(
         _rankings_row_html(i, row, max_score)
-        for i, (_, row) in enumerate(filtered.head(60).iterrows())
+        for i, (_, row) in enumerate(filtered.iterrows())
     )
     st.markdown(rows_html, unsafe_allow_html=True)
-
-    if len(filtered) > 60:
-        st.caption(f"Showing top 60 of {len(filtered)} players. Use filters to narrow.")
 
 
 # ─────────────────────────────────────────────────────────────────
