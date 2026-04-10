@@ -308,11 +308,15 @@ def compute_standings(
         return df
 
     # Sort: by Total ascending (lower = better in golf), then tiebreaker
+    # (most negative tiebreaker = closer to actual winning score = better)
     df = df.sort_values(["Total", "Tiebreaker"], ascending=[True, False])
-    df["Rank"] = range(1, len(df) + 1)
 
-    # Handle ties
-    df["Rank"] = df.groupby("Total")["Rank"].transform("min")
+    # Assign sequential rank broken by tiebreaker — no mass-tie rank numbers.
+    # Entries with the same Total AND same Tiebreaker share a rank (true tie).
+    # Entries with the same Total but different Tiebreakers get distinct ranks.
+    df["_sort_key"] = list(zip(df["Total"], -df["Tiebreaker"]))
+    df["Rank"] = df.groupby("_sort_key")["_sort_key"].transform("ngroup") + 1
+    df.drop(columns=["_sort_key"], inplace=True)
 
     # Projected payout
     def _payout(rank: int) -> float:
