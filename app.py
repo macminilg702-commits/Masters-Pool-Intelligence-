@@ -5,6 +5,7 @@ Run: streamlit run app.py
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import json
 import os
 import time
 
@@ -31,6 +32,33 @@ except ImportError:
             for name, s in scores.items()
         }
         return scores, detail, src
+
+# ─────────────────────────────────────────────────────────────────
+# CONFIRMED PICKS — disk persistence (survives app restarts)
+# ─────────────────────────────────────────────────────────────────
+
+_PICKS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "confirmed_picks.json")
+
+
+def _save_picks_to_disk(picks: dict) -> None:
+    """Write confirmed picks to disk so they survive Streamlit restarts."""
+    try:
+        with open(_PICKS_FILE, "w") as _f:
+            json.dump(picks, _f)
+    except Exception as _e:
+        pass  # never crash the app over a save failure
+
+
+def _load_picks_from_disk() -> dict | None:
+    """Load confirmed picks from disk. Returns None if file missing/corrupt."""
+    try:
+        if os.path.exists(_PICKS_FILE):
+            with open(_PICKS_FILE) as _f:
+                return json.load(_f)
+    except Exception:
+        pass
+    return None
+
 
 # ─────────────────────────────────────────────────────────────────
 # PAGE CONFIG  — must be first Streamlit call
@@ -2069,11 +2097,13 @@ def tab_my_picks(df: pd.DataFrame, teams: dict, data: dict):
     # ── Confirm button (top — visible without scrolling) ───────────
     st.markdown('<div class="confirm-btn">', unsafe_allow_html=True)
     if st.button("✓  CONFIRM MY PICKS", key="confirm_btn_top", use_container_width=True):
-        st.session_state["confirmed_picks"] = {
+        _cp = {
             "teams":      st.session_state["custom_teams"],
             "tiebreaker": st.session_state.get("tiebreaker_value", -42),
         }
+        st.session_state["confirmed_picks"] = _cp
         st.session_state["picks_confirmed"] = True
+        _save_picks_to_disk(_cp)
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -2266,11 +2296,13 @@ padding:14px 18px;margin-top:12px;">
     # ── Confirm button ──────────────────────────────────────────────
     st.markdown('<div style="margin-top:8px;" class="confirm-btn">', unsafe_allow_html=True)
     if st.button("CONFIRM MY PICKS", key="confirm_btn", use_container_width=True):
-        st.session_state["confirmed_picks"] = {
-            "teams":     st.session_state["custom_teams"],
+        _cp = {
+            "teams":      st.session_state["custom_teams"],
             "tiebreaker": st.session_state.get("tiebreaker_value", -42),
         }
+        st.session_state["confirmed_picks"] = _cp
         st.session_state["picks_confirmed"] = True
+        _save_picks_to_disk(_cp)
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -5357,9 +5389,16 @@ def main():
     # ── CSS injection ──────────────────────────────────────────────
     st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
-    # ── Session state cache-bust ───────────────────────────────────
+    # ── Restore confirmed picks from disk (survives restarts) ─────────
+    if not st.session_state.get("picks_confirmed"):
+        _disk_picks = _load_picks_from_disk()
+        if _disk_picks:
+            st.session_state["confirmed_picks"] = _disk_picks
+            st.session_state["picks_confirmed"] = True
+
+    # ── Session state cache-bust (never wipes confirmed picks) ────────
     if st.session_state.get("data_version") != "1.2":
-        for _k in ["custom_teams", "picks_confirmed", "scored_df", "teams",
+        for _k in ["custom_teams", "scored_df", "teams",
                    "field_report", "_wk", "_teams_wk", "_field_report_wk"]:
             st.session_state.pop(_k, None)
         st.session_state["data_version"] = "1.2"

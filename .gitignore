@@ -1,6 +1,8 @@
 # Never commit these
 .env
 *.json
+# Exception: persist confirmed picks across deployments
+!confirmed_picks.json
 data/
 __pycache__/
 *.pyc
