@@ -2749,6 +2749,13 @@ def tab_pool_standings(data: dict):
     def _team_rank_card(tk: str, label: str, color: str) -> str:
         rank_val = _entry_ranks.get(tk)
         rank_str = str(rank_val) if rank_val is not None else "—"
+        # Percentile: what % of field this entry beats (higher = better)
+        if rank_val is not None and total_entries > 0:
+            pct = round((1 - (rank_val - 1) / total_entries) * 100)
+            pct_color = "#52CC72" if pct >= 75 else ("#c8a84a" if pct >= 40 else "#cc5a5a")
+            pct_str   = f'<div style="font-size:11px;font-weight:700;color:{pct_color};margin-top:3px;">TOP {pct}%</div>'
+        else:
+            pct_str = ""
         score_val = float(_ct.get(tk, {}).get("total_augusta_score", 0))
         score_str = f"{score_val:+.0f}" if score_val != 0 else "—"
         return (
@@ -2759,9 +2766,8 @@ def tab_pool_standings(data: dict):
             f'<div style="font-family:\'DM Mono\',monospace;font-size:42px;font-weight:300;'
             f'color:{color};line-height:1.1;">{rank_str}'
             f'<span style="font-size:16px;color:#5a8a5a;">/{total_entries}</span></div>'
-            f'<div style="font-family:\'DM Mono\',monospace;font-size:16px;'
-            f'color:{color};margin-top:4px;">{score_str}</div>'
-            f'<div style="font-size:10px;color:#5a8a5a;margin-top:2px;">POOL RANK</div>'
+            f'{pct_str}'
+            f'<div style="font-size:10px;color:#5a8a5a;margin-top:4px;">POOL RANK</div>'
             f'</div>'
         )
 
@@ -2792,47 +2798,151 @@ def tab_pool_standings(data: dict):
         unsafe_allow_html=True,
     )
 
-    # ── SECTION 3: Pool Top 20 ─────────────────────────────────────
-
+    # ── SECTION 3: Standings table — search / top 20 / full ───────
     st.markdown('<hr style="border-color:var(--b1);margin:14px 0;">', unsafe_allow_html=True)
-    st.markdown('<div class="sec-hdr">POOL TOP 20</div>', unsafe_allow_html=True)
 
-    top20 = standings.head(20)
-    rows_html = ""
-    for _, srow in top20.iterrows():
+    # Controls row
+    view_mode_col, search_col = st.columns([1, 2])
+    with view_mode_col:
+        pool_view = st.radio(
+            "View",
+            ["TOP 20", "TOP 50", "ALL", "SEARCH"],
+            horizontal=True,
+            key="pool_view_mode",
+            label_visibility="collapsed",
+        )
+    with search_col:
+        search_term = ""
+        if pool_view == "SEARCH":
+            search_term = st.text_input(
+                "Search participant",
+                placeholder="Type a name…",
+                key="standings_search",
+                label_visibility="collapsed",
+            )
+
+    # Filter standings
+    if pool_view == "TOP 20":
+        display_standings = standings.head(20)
+        section_label = "POOL TOP 20"
+    elif pool_view == "TOP 50":
+        display_standings = standings.head(50)
+        section_label = "POOL TOP 50"
+    elif pool_view == "SEARCH":
+        if search_term.strip():
+            mask = standings["Entry_Name"].str.contains(search_term.strip(), case=False, na=False)
+            display_standings = standings[mask]
+        else:
+            display_standings = standings.iloc[0:0]  # empty until typed
+        section_label = f"SEARCH: {search_term.upper()}" if search_term else "SEARCH"
+    else:
+        display_standings = standings
+        section_label = f"ALL {total_entries} ENTRIES"
+
+    st.markdown(f'<div class="sec-hdr">{section_label}</div>', unsafe_allow_html=True)
+
+    # Pre-compute user's best total for GAP column
+    if user_entries and not user_rows.empty:
+        user_best_total = int(standings[standings["Entry_Name"].isin(user_entries)]["Total"].min())
+    else:
+        user_best_total = None
+
+    # Standings table
+    def _standings_row(srow) -> str:
         is_user = srow.get("Is_User", False)
         row_cls = "lb-row mine" if is_user else "lb-row"
         nm_cls  = "lb-nm mine" if is_user else "lb-nm"
         dot     = '<span class="lb-dot"></span>' if is_user else ""
-        total   = srow.get("Total", 0)
+        total   = int(srow.get("Total", 0))
+        rank    = int(srow.get("Rank", 0))
         sc_cls  = "sc-u" if total < 0 else ("sc-o" if total > 0 else "sc-e")
+        sc_str  = f"{total:+d}" if total != 0 else "E"
         tb_val  = srow.get("Tiebreaker", "–")
-
-        gap_str = ""
-        if not is_user and best_rank is not None and user_entries:
-            user_best_total = standings[standings["Entry_Name"].isin(user_entries)]["Total"].min()
+        # Percentile
+        pct     = round((1 - (rank - 1) / total_entries) * 100) if total_entries > 0 else 0
+        pct_col = "#52CC72" if pct >= 75 else ("#c8a84a" if pct >= 40 else "#cc5a5a")
+        pct_cell = f'<div style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:700;color:{pct_col};">T{pct}%</div>'
+        # Gap to user's best (only for non-user rows when user exists)
+        if not is_user and user_best_total is not None:
             gap = total - user_best_total
-            gap_str = f'+{gap}' if gap > 0 else str(gap)
-
-        rows_html += (
+            gap_str = f"{gap:+d}" if gap != 0 else "—"
+            gap_col = "var(--green2)" if gap < 0 else ("var(--red)" if gap > 0 else "var(--t3)")
+        else:
+            gap_str, gap_col = "★" if is_user else "—", "var(--gold)" if is_user else "var(--t3)"
+        return (
             f'<div class="{row_cls}">'
-            f'<div class="lb-pos">{srow.get("Rank","–")}</div>'
+            f'<div class="lb-pos">{rank}</div>'
             f'<div class="{nm_cls}">{dot}{srow.get("Entry_Name","?")}</div>'
-            f'<div class="{sc_cls}">{total}</div>'
+            f'<div class="{sc_cls}">{sc_str}</div>'
+            f'{pct_cell}'
             f'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--t3);">{tb_val}</div>'
-            f'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--t3);">{gap_str}</div>'
+            f'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:{gap_col};">{gap_str}</div>'
             f'</div>'
         )
 
     hdr_html = (
-        '<div style="display:grid;grid-template-columns:48px 1fr 70px 70px 70px;gap:0;padding:6px 8px;'
-        'border-bottom:1px solid var(--b1);background:var(--s1);">'
-        '<div class="lb-hdr-c">POS</div><div class="lb-hdr-c">ENTRY</div>'
-        '<div class="lb-hdr-c">TOTAL</div><div class="lb-hdr-c">TB</div>'
+        '<div style="display:grid;grid-template-columns:48px 1fr 64px 56px 56px 64px;gap:0;'
+        'padding:6px 8px;border-bottom:1px solid var(--b1);background:var(--s1);">'
+        '<div class="lb-hdr-c">POS</div>'
+        '<div class="lb-hdr-c">ENTRY</div>'
+        '<div class="lb-hdr-c">TOTAL</div>'
+        '<div class="lb-hdr-c">%ILE</div>'
+        '<div class="lb-hdr-c">TB</div>'
         '<div class="lb-hdr-c">GAP</div>'
         '</div>'
     )
-    st.markdown(hdr_html + rows_html, unsafe_allow_html=True)
+
+    if display_standings.empty and pool_view == "SEARCH":
+        st.markdown(hdr_html, unsafe_allow_html=True)
+        st.markdown(
+            '<div style="padding:20px;text-align:center;color:var(--t4);font-size:11px;">Type a name above to search…</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        rows_html = "".join(_standings_row(row) for _, row in display_standings.iterrows())
+        st.markdown(hdr_html + rows_html, unsafe_allow_html=True)
+
+    # ── SECTION 4: Leading teams ────────────────────────────────────
+    st.markdown('<hr style="border-color:var(--b1);margin:14px 0;">', unsafe_allow_html=True)
+    st.markdown('<div class="sec-hdr">LEADING TEAMS — TOP 5</div>', unsafe_allow_html=True)
+
+    top5 = standings.head(5)
+    for _, lrow in top5.iterrows():
+        rank    = int(lrow.get("Rank", 0))
+        name    = lrow.get("Entry_Name", "?")
+        total   = int(lrow.get("Total", 0))
+        sc_str  = f"{total:+d}" if total != 0 else "E"
+        sc_cls  = "sc-u" if total < 0 else ("sc-o" if total > 0 else "sc-e")
+        is_user = lrow.get("Is_User", False)
+        dot     = "★ " if is_user else ""
+        dot_col = "var(--gold)" if is_user else "var(--t2)"
+        # Players
+        players = " · ".join(filter(None, [
+            lrow.get("P1",""), lrow.get("P2",""), lrow.get("P3",""), lrow.get("P4","")
+        ]))
+        p1s = int(lrow.get("P1_Score", 0))
+        p2s = int(lrow.get("P2_Score", 0))
+        p3s = int(lrow.get("P3_Score", 0))
+        p4s = int(lrow.get("P4_Score", 0))
+        score_detail = " / ".join(
+            f"{s:+d}" if s != 0 else "E"
+            for s in [p1s, p2s, p3s, p4s]
+        )
+        st.markdown(
+            f'<div style="background:#0a140a;border:1px solid var(--b1);border-radius:4px;'
+            f'padding:10px 14px;margin-bottom:6px;">'
+            f'<div style="display:flex;align-items:baseline;gap:10px;">'
+            f'<div style="font-family:\'DM Mono\',monospace;font-size:18px;color:var(--t4);min-width:24px;">#{rank}</div>'
+            f'<div style="font-size:13px;font-weight:600;color:{dot_col};flex:1;">{dot}{name}</div>'
+            f'<div class="{sc_cls}" style="font-size:20px;font-weight:700;">{sc_str}</div>'
+            f'</div>'
+            f'<div style="font-size:10px;color:var(--t3);margin-top:4px;">'
+            f'{players}</div>'
+            f'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--t4);margin-top:2px;">'
+            f'{score_detail}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
     if st.session_state.get("pool_df_raw") is not None:
         st.markdown('<br>', unsafe_allow_html=True)
