@@ -2055,6 +2055,19 @@ def tab_my_picks(df: pd.DataFrame, teams: dict, data: dict):
 """
     st.markdown(portfolio_html, unsafe_allow_html=True)
 
+    # ── Confirm button (top — visible without scrolling) ───────────
+    st.markdown('<div class="confirm-btn">', unsafe_allow_html=True)
+    if st.button("✓  CONFIRM MY PICKS", key="confirm_btn_top", use_container_width=True):
+        st.session_state["confirmed_picks"] = {
+            "teams":      st.session_state["custom_teams"],
+            "tiebreaker": st.session_state.get("tiebreaker_value", -42),
+        }
+        st.session_state["picks_confirmed"] = True
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+
     # ── NEXT UP — MODEL'S NEXT BEST AVAILABLE ──────────────────────
     _render_next_up(df, ct)
 
