@@ -2087,10 +2087,13 @@ def tab_my_picks(df: pd.DataFrame, teams: dict, data: dict):
             swap_out = st.selectbox("Remove", options=current_players, key="swap_out_select")
 
         with col3:
-            all_team_players = {
+            # Only exclude the OTHER players already on THIS team —
+            # the same player can appear on multiple teams (user's real picks
+            # may differ from the model and can share players across entries).
+            _this_team_others = {
                 p.get("Player")
-                for tk in ["team_a", "team_b", "team_c"]
-                for p in ct[tk].get("stats", [])
+                for p in ct[swap_team].get("stats", [])
+                if p.get("Player") != swap_out
             }
 
             def _fmt_swap_player(name: str) -> str:
@@ -2104,11 +2107,8 @@ def tab_my_picks(df: pd.DataFrame, teams: dict, data: dict):
                 sc  = r.get("Augusta_Score", 0)
                 return f"{name}  [Score:{sc:.0f} Own:{own:.0f}% {odds_s}]"
 
-            cut_col = "Augusta_Cut_Rate" if "Augusta_Cut_Rate" in df.columns else None
-            avail_mask = ~df["Player"].isin(all_team_players)
-            if cut_col:
-                avail_mask &= df[cut_col] >= 0.60
-            available = df[avail_mask].sort_values("EV_Score", ascending=False)
+            avail_mask = ~df["Player"].isin(_this_team_others)
+            available = df[avail_mask].sort_values("Augusta_Score", ascending=False)
 
             swap_in = st.selectbox(
                 "Add",
