@@ -17,9 +17,20 @@ from score_engine import score_players, _detect_chaos_mode, american_to_implied_
 from pool_optimizer import generate_teams, score_custom_team, compute_pool_tiebreaker
 from tiebreaker import predict_tiebreaker
 from live_tracker import (
-    parse_pool_entries, fetch_live_scores, fetch_live_data, compute_standings,
+    parse_pool_entries, fetch_live_scores, compute_standings,
     DEMO_ENTRIES, DEMO_LIVE_SCORES,
 )
+try:
+    from live_tracker import fetch_live_data
+except ImportError:
+    # Fallback shim — wraps fetch_live_scores for older deployments
+    def fetch_live_data():
+        scores, src = fetch_live_scores()
+        detail = {
+            name: {"score": s, "today": "–", "thru": "–", "position": "–", "round": 1, "state": "pre"}
+            for name, s in scores.items()
+        }
+        return scores, detail, src
 
 # ─────────────────────────────────────────────────────────────────
 # PAGE CONFIG  — must be first Streamlit call
