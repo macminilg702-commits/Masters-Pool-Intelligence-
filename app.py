@@ -5,6 +5,7 @@ Run: streamlit run app.py
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import os
 import time
 
 import numpy as np
@@ -2531,7 +2532,46 @@ def tab_pool_standings(data: dict):
 
     user_entries = [e.strip() for e in user_input.split(",") if e.strip()]
 
-    # ── File upload ────────────────────────────────────────────────
+    # ── Auto-load Ferraro pool from disk ──────────────────────────
+    _POOL_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pool_entries.csv")
+    if "pool_df_raw" not in st.session_state and os.path.exists(_POOL_CSV):
+        try:
+            st.session_state["pool_df_raw"] = pd.read_csv(_POOL_CSV)
+        except Exception as _csv_err:
+            st.warning(f"Could not auto-load pool_entries.csv: {_csv_err}")
+
+    # ── Auto-inject MY PICKS from confirmed picks ─────────────────
+    _MY_PICK_LABELS = ["MY PICKS — Floor", "MY PICKS — Ceiling", "MY PICKS — Value"]
+    _MY_TEAM_KEYS   = ["team_a", "team_b", "team_c"]
+    if st.session_state.get("picks_confirmed"):
+        _cp    = st.session_state.get("confirmed_picks", {})
+        _teams = _cp.get("teams", {})
+        _tb    = int(_cp.get("tiebreaker", 0))
+        _my_rows = []
+        for _tk, _ename in zip(_MY_TEAM_KEYS, _MY_PICK_LABELS):
+            _t      = _teams.get(_tk, {})
+            _stats  = _t.get("stats", [])
+            _ps     = [s.get("Player", "") for s in _stats if s.get("Player")]
+            while len(_ps) < 4:
+                _ps.append("")
+            _my_rows.append({
+                "Entry_Name": _ename,
+                "P1": _ps[0], "P2": _ps[1], "P3": _ps[2], "P4": _ps[3],
+                "Tiebreaker": _tb,
+            })
+        _base = st.session_state.get("pool_df_raw", DEMO_ENTRIES).copy()
+        # Remove any stale MY PICKS rows so we don't duplicate on rerun
+        _base = _base[~_base["Entry_Name"].isin(_MY_PICK_LABELS)]
+        st.session_state["pool_df_raw"] = pd.concat(
+            [_base, pd.DataFrame(_my_rows)], ignore_index=True
+        )
+        # Auto-populate the entry names field on first load
+        if not st.session_state.get("user_entries_str"):
+            st.session_state["user_entries_str"] = ", ".join(_MY_PICK_LABELS)
+        # Re-derive user_entries so current render uses correct names
+        user_entries = [e.strip() for e in st.session_state["user_entries_str"].split(",") if e.strip()]
+
+    # ── File upload (fallback / replacement) ──────────────────────
     if "pool_df_raw" not in st.session_state:
         st.markdown(
             '<div style="border:1px dashed var(--b2);padding:32px;text-align:center;background:var(--s1);margin-bottom:16px;">'
@@ -2556,6 +2596,13 @@ def tab_pool_standings(data: dict):
                 st.rerun()
         else:
             st.caption("Using demo data below for illustration.")
+    else:
+        _n_entries = len(st.session_state["pool_df_raw"])
+        st.markdown(
+            f'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--green2);margin-bottom:8px;">'
+            f'✓ FERRARO POOL LOADED &nbsp;·&nbsp; {_n_entries} ENTRIES</div>',
+            unsafe_allow_html=True,
+        )
 
     # ── Fetch / cache live scores ──────────────────────────────────
     refresh_c, auto_c = st.columns([1, 2])
