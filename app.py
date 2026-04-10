@@ -17,7 +17,7 @@ from score_engine import score_players, _detect_chaos_mode, american_to_implied_
 from pool_optimizer import generate_teams, score_custom_team, compute_pool_tiebreaker
 from tiebreaker import predict_tiebreaker
 from live_tracker import (
-    parse_pool_entries, fetch_live_scores, compute_standings,
+    parse_pool_entries, fetch_live_scores, fetch_live_data, compute_standings,
     DEMO_ENTRIES, DEMO_LIVE_SCORES,
 )
 
@@ -2623,14 +2623,16 @@ def tab_pool_standings(data: dict):
         st.markdown('<div class="refresh-btn">', unsafe_allow_html=True)
         if st.button("REFRESH SCORES", key="refresh_scores_standings"):
             st.session_state["live_scores"] = None
+            st.session_state["live_detail"] = None
         st.markdown("</div>", unsafe_allow_html=True)
     with auto_c:
         auto_ref = st.checkbox("Auto-refresh every 5 min", value=False, key="auto_ref_standings")
 
     if "live_scores" not in st.session_state or st.session_state["live_scores"] is None:
         with st.spinner("Fetching scores..."):
-            live_scores, src = fetch_live_scores()
+            live_scores, live_detail, src = fetch_live_data()
         st.session_state["live_scores"]     = live_scores
+        st.session_state["live_detail"]     = live_detail
         st.session_state["live_score_src"]  = src
         st.session_state["live_score_time"] = time.strftime("%H:%M")
 
@@ -2820,18 +2822,21 @@ def tab_leaderboard(data: dict):
         st.markdown('<div class="refresh-btn">', unsafe_allow_html=True)
         if st.button("REFRESH", key="lb_refresh"):
             st.session_state["live_scores"] = None
+            st.session_state["live_detail"] = None
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
     # ── Live scores ────────────────────────────────────────────────
     if "live_scores" not in st.session_state or st.session_state["live_scores"] is None:
         with st.spinner("Fetching live scores..."):
-            live_scores, src = fetch_live_scores()
+            live_scores, live_detail, src = fetch_live_data()
         st.session_state["live_scores"]     = live_scores
+        st.session_state["live_detail"]     = live_detail
         st.session_state["live_score_src"]  = src
         st.session_state["live_score_time"] = time.strftime("%H:%M")
 
     live_scores = st.session_state.get("live_scores", DEMO_LIVE_SCORES)
+    live_detail = st.session_state.get("live_detail", {})
 
     # ── My players (from confirmed picks or custom teams) ──────────
     my_players: set[str] = set()
@@ -2896,6 +2901,23 @@ def tab_leaderboard(data: dict):
         sc_cls  = "sc-u" if score < 0 else ("sc-o" if score > 0 else "sc-e")
         sc_str  = f"{score:+d}" if isinstance(score, int) else str(score)
 
+        # Rich detail from ESPN (position, today, thru)
+        d         = live_detail.get(player, {})
+        pos_str   = d.get("position", f"T{pos}")
+        today_str = d.get("today", "–")
+        thru_str  = d.get("thru", "–")
+        state     = d.get("state", "")
+        # Colour today's score
+        try:
+            today_val = int(today_str.replace("E", "0"))
+            today_cls = "sc-u" if today_val < 0 else ("sc-o" if today_val > 0 else "sc-e")
+            today_disp = f"{today_val:+d}" if today_val != 0 else "E"
+        except (ValueError, AttributeError):
+            today_cls  = "sc-e"
+            today_disp = today_str if today_str not in ("–", "") else "–"
+        # Active players: show hole number in gold
+        thru_color = "#c8a84a" if state == "in" else "var(--t4)"
+
         # Pool entry badges
         entry_cnt = pool_entry_count.get(player, 0)
         team_tags = "".join(
@@ -2910,11 +2932,11 @@ def tab_leaderboard(data: dict):
 
         rows_html += (
             f'<div class="{row_cls}">'
-            f'<div class="lb-pos">T{pos}</div>'
+            f'<div class="lb-pos">{pos_str}</div>'
             f'<div class="{nm_cls}">{dot}{player}</div>'
             f'<div class="{sc_cls}">{sc_str}</div>'
-            f'<div class="sc-e">–</div>'
-            f'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--t4);">–</div>'
+            f'<div class="{today_cls}">{today_disp}</div>'
+            f'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:{thru_color};">{thru_str}</div>'
             f'<div style="font-size:10px;color:var(--t3);">{pool_cell}</div>'
             f'</div>'
         )

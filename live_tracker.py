@@ -122,21 +122,40 @@ def fetch_live_scores() -> tuple[dict[str, int], str]:
     Returns (scores_dict, source_label).
     scores_dict: {player_name: score_vs_par}
     """
-    # Try ESPN API
-    scores = _try_espn_leaderboard()
-    if scores:
-        return scores, "ESPN (live)"
-
-    # Try Masters.com scrape
-    scores = _try_masters_scrape()
-    if scores:
-        return scores, "Masters.com (live)"
-
-    return DEMO_LIVE_SCORES.copy(), "Demo data (tournament not active)"
+    scores, _detail, source = fetch_live_data()
+    return scores, source
 
 
-def _try_espn_leaderboard() -> dict[str, int] | None:
-    """Fetch from ESPN's golf leaderboard API."""
+def fetch_live_data() -> tuple[dict[str, int], dict[str, dict], str]:
+    """
+    Fetch live Masters data from ESPN API.
+    Returns (scores, detail, source_label) where:
+      scores  — {player_name: total_score_to_par (int)}
+      detail  — {player_name: {score, today, thru, position, round, state}}
+    """
+    result = _try_espn_leaderboard_full()
+    if result:
+        scores, detail = result
+        return scores, detail, "ESPN (live)"
+
+    # Fallback — demo data, no detail
+    demo = DEMO_LIVE_SCORES.copy()
+    demo_detail = {
+        name: {"score": s, "today": "–", "thru": "–", "position": "–", "round": 1, "state": "pre"}
+        for name, s in demo.items()
+    }
+    return demo, demo_detail, "Demo data (tournament not active)"
+
+
+def _try_espn_leaderboard_full() -> tuple[dict[str, int], dict[str, dict]] | None:
+    """
+    Fetch from ESPN's golf leaderboard API.
+    Returns (scores_dict, detail_dict) or None on failure.
+
+    ESPN returns competitor.score as a dict {"value": float, "displayValue": str},
+    NOT a plain string — the old code broke on this.  Total-to-par lives in
+    competitor.statistics[0] where name == "scoreToPar".
+    """
     try:
         url = "https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard"
         resp = requests.get(url, timeout=10,
@@ -150,33 +169,67 @@ def _try_espn_leaderboard() -> dict[str, int] | None:
         # Find Masters tournament
         masters_event = None
         for evt in events:
-            name = evt.get("name", "").lower()
-            if "masters" in name:
+            if "masters" in evt.get("name", "").lower():
                 masters_event = evt
                 break
         if not masters_event and events:
-            masters_event = events[0]  # fallback to first event
+            masters_event = events[0]
         if not masters_event:
             return None
 
-        scores = {}
-        for competitor in masters_event.get("competitions", [{}])[0].get("competitors", []):
-            athlete = competitor.get("athlete", {})
-            name = athlete.get("displayName", "")
-            score_str = competitor.get("score", "E")
-            try:
-                if score_str == "E":
-                    score = 0
-                elif score_str.startswith("+"):
-                    score = int(score_str[1:])
-                else:
-                    score = int(score_str)
-            except ValueError:
-                score = 0
-            if name:
-                scores[name] = score
+        scores: dict[str, int] = {}
+        detail: dict[str, dict] = {}
 
-        return scores if scores else None
+        for competitor in masters_event.get("competitions", [{}])[0].get("competitors", []):
+            name = competitor.get("athlete", {}).get("displayName", "")
+            if not name:
+                continue
+
+            # ── Total score-to-par ─────────────────────────────────
+            score = 0
+            for stat in competitor.get("statistics", []):
+                if stat.get("name") == "scoreToPar":
+                    try:
+                        score = int(stat.get("value", 0))
+                    except (TypeError, ValueError):
+                        score = 0
+                    break
+
+            # ── Status fields ──────────────────────────────────────
+            status    = competitor.get("status", {})
+            state     = status.get("type", {}).get("state", "")   # "pre"/"in"/"post"
+            position  = status.get("position", {}).get("displayName", "–")
+            period    = int(status.get("period", 1))
+            today_raw = status.get("todayDetail", "")             # e.g. "-5(F)", "+2(11)", "E(F)"
+
+            # Parse today / thru from todayDetail
+            # e.g. "-5(F)" → today="-5", thru="F"
+            #      "+2(11)"→ today="+2", thru="11"  (active round)
+            #      "E(F)"  → today="E",  thru="F"
+            # todayDetail is populated even when state="pre" (shows last completed round).
+            today_str = "–"
+            thru_str  = "–"
+            if today_raw:
+                m = re.match(r'^([+\-]?\d+|E)\((\w+)\)$', today_raw)
+                if m:
+                    td, th = m.group(1), m.group(2)
+                    today_str = "E" if td == "E" else td
+                    thru_str  = "F" if th == "F" else th
+                else:
+                    today_str = today_raw  # leave raw if format differs
+
+            scores[name] = score
+            detail[name] = {
+                "score":    score,
+                "today":    today_str,
+                "thru":     thru_str,
+                "position": position,
+                "round":    period,
+                "state":    state,
+            }
+
+        return (scores, detail) if scores else None
+
     except Exception as e:
         logger.debug(f"ESPN leaderboard fetch failed: {e}")
         return None
