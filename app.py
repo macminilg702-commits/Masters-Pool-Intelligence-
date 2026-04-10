@@ -2751,8 +2751,8 @@ def tab_pool_standings(data: dict):
         rank_str = str(rank_val) if rank_val is not None else "—"
         # Percentile: what % of field this entry beats (higher = better)
         if rank_val is not None and total_entries > 0:
-            pct = round((1 - (rank_val - 1) / total_entries) * 100)
-            pct_color = "#52CC72" if pct >= 75 else ("#c8a84a" if pct >= 40 else "#cc5a5a")
+            pct = max(1, round(rank_val / total_entries * 100))
+            pct_color = "#52CC72" if pct <= 25 else ("#c8a84a" if pct <= 50 else "#cc5a5a")
             pct_str   = f'<div style="font-size:11px;font-weight:700;color:{pct_color};margin-top:3px;">TOP {pct}%</div>'
         else:
             pct_str = ""
@@ -2859,8 +2859,8 @@ def tab_pool_standings(data: dict):
         sc_str  = f"{total:+d}" if total != 0 else "E"
         tb_val  = srow.get("Tiebreaker", "–")
         # Percentile
-        pct     = round((1 - (rank - 1) / total_entries) * 100) if total_entries > 0 else 0
-        pct_col = "#52CC72" if pct >= 75 else ("#c8a84a" if pct >= 40 else "#cc5a5a")
+        pct     = max(1, round(rank / total_entries * 100)) if total_entries > 0 else 0
+        pct_col = "#52CC72" if pct <= 25 else ("#c8a84a" if pct <= 50 else "#cc5a5a")
         pct_cell = f'<div style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:700;color:{pct_col};">T{pct}%</div>'
         # Gap to user's best (only for non-user rows when user exists)
         if not is_user and user_best_total is not None:
